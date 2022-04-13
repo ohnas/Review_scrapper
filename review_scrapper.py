@@ -1,5 +1,6 @@
 import time
-import csv
+import datetime
+import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -40,22 +41,23 @@ for page_number in range(2, 12):
         content = review.find("div", {"class": "YEtwtZFLDz"}).find(
             "span", {"class": "_3QDEeS6NLn"}
         )
+        content = content.text.split("\n")
+        if len(content) > 1:
+            content = "".join(content)
+        else:
+            content = str(content[0])
+
         rate = review.find("div", {"class": "_2V6vMO_iLm"}).find(
             "em", {"class": "_15NU42F3kT"}
         )
+        rate = int(rate.text)
+
         created = review.find("div", {"class": "_2FmJXrTVEX"}).find(
             "span", {"class": "_3QDEeS6NLn"}
         )
-        review_item = {
-            "content": content.text.split("\n"),
-            "rate": rate.text,
-            "created": created.text,
-        }
+        created = created.text.replace(".", "")
+        created = "20" + created
+        created = datetime.datetime.strptime(created, "%Y%m%d").date()
+
+        review_item = {"content": content, "rate": rate, "created": created}
         reviews_list.append(review_item)
-
-
-with open("reviews.csv", "w", encoding="utf-8-sig", newline="") as f:
-    writer = csv.writer(f)
-    writer.writerow(["content", "rate", "date"])
-    for r in reviews_list:
-        writer.writerow(r.values())
