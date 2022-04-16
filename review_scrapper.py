@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+
 options = webdriver.ChromeOptions()
 # 크롬 브라우저를 띄우지 않고 실행
 options.headless = True
@@ -16,7 +17,7 @@ options.add_argument(
 
 browser = webdriver.Chrome(options=options)
 
-url = "https://smartstore.naver.com/the_3/products/4878027502"
+url = "https://smartstore.naver.com/the_3/products/6142640270"
 browser.get(url)
 # 로딩이 완전히 될때까지 4초 대기
 time.sleep(4)
@@ -31,6 +32,7 @@ reviews_list = []
 #'다음 ' 페이지의 속성이 "true" 일 경우(리뷰페이지가 10개 이하일때)
 if hidden_next_page == "true":
     for page_number in range(2, len(pages)):
+        time.sleep(0.7)
         # 클릭해야하는 페이지 element 찾기
         page = browser.find_element(
             By.XPATH,
@@ -74,6 +76,7 @@ elif hidden_next_page == "false":
     while True:
         try:
             for page_number in range(2, 13):
+                time.sleep(0.7)
                 page = browser.find_element(
                     By.XPATH,
                     f"//*[@id='REVIEW']/div/div[3]/div/div[2]/div/div/a[{page_number}]",
@@ -106,7 +109,11 @@ elif hidden_next_page == "false":
                     created = "20" + created
                     created = datetime.datetime.strptime(created, "%Y%m%d").date()
 
-                    review_item = {"content": content, "rate": rate, "created": created}
+                    review_item = {
+                        "content": content,
+                        "rate": rate,
+                        "created": created,
+                    }
                     reviews_list.append(review_item)
         except:
             break
@@ -114,5 +121,13 @@ elif hidden_next_page == "false":
 # 크롬드라이브 종료
 browser.quit()
 
+# 스크랩해온 리스트를 dataframe 으로 변환
 df = pd.DataFrame(reviews_list)
-print(df)
+# data 중에 중복된 항목 있으면 중본된 항목 중 1개만 남기로 나머지는 삭제
+df = df.drop_duplicates(keep="first", subset=["content", "rate", "created"])
+# 스크랩해온 날짜를 datatime 형식으로 변환(분명히 스크랩해오면서 data 형식으로 변환시키면서 저장하였는데 dataframe 으로 변환하면서 다시한번 데이터형식 출력해보면 string 이기 때문에 pandas 에서 다시한번 변환시켜줌 이유는 모르겠음)
+df["created"] = pd.to_datetime(df["created"], format="%Y-%m-%d")
+# date를 index 시켜주기
+df = df.set_index(["created"], drop=True)
+# 월별 data 갯수 구하기
+df = df.resample("M").count()

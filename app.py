@@ -1,18 +1,11 @@
 from dash import Dash, html, dcc
 import plotly.express as px
-import pandas as pd
+
+from review_scrapper import review_scrap
 
 app = Dash(__name__)
 
-df = pd.DataFrame(
-    {
-        "Fruit": ["Apples", "Oranges", "Bananas", "Apples", "Oranges", "Bananas"],
-        "Amount": [4, 1, 2, 2, 4, 5],
-        "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"],
-    }
-)
-
-fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
+fig = px.bar(review_scrap())
 
 app.layout = html.Div(
     children=[
